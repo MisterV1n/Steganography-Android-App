@@ -15,23 +15,24 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.ayush.imagesteganographylibrary.Text.AsyncTaskCallback.TextEncodingCallback
 import com.ayush.imagesteganographylibrary.Text.ImageSteganography
 import com.ayush.imagesteganographylibrary.Text.TextEncoding
-
-import com.mister.steganography.R
-import kotlinx.android.synthetic.main.fragment_encode.*
+import com.mister.steganography.databinding.FragmentEncodeBinding
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.OutputStream
 import kotlin.random.Random
 
-class EncodeFragment : Fragment(), TextEncodingCallback, View.OnClickListener {
+class EncodeFragment : Fragment(), TextEncodingCallback  {
+    private var _binding: FragmentEncodeBinding? = null
+    // This property is only valid between onCreateView and
+// onDestroyView.
+    private val binding get() = _binding!!
     private val SELECT_PICTURE = 100
     private var filepath: Uri? = null
     private var original_image: Bitmap? = null
@@ -43,80 +44,64 @@ class EncodeFragment : Fragment(), TextEncodingCallback, View.OnClickListener {
         checkAndRequestPermissions()
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        return inflater.inflate(R.layout.fragment_encode, container, false)
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        view.findViewById<Button>(R.id.button_openimage).setOnClickListener(this)
-        view.findViewById<Button>(R.id.button_encode).setOnClickListener(this)
-        view.findViewById<Button>(R.id.button_save).setOnClickListener(this)
-    }
-
-    override fun onClick(v: View?) {
-        when(v!!.id){
-            R.id.button_openimage ->{
-                imagechooser()
-            }
-            R.id.button_encode ->{
-                val secret_key = edittext_key
-                val message= edittext_message
-                if(filepath!=null){
-                    if (edittext_key.text != null){
-                        if(edittext_message.text != null){
-                            val imageSteganography = ImageSteganography(
-                                message.getText().toString(),
-                                secret_key.getText().toString(),
-                                original_image
-                            )
-                            val textEncoding = TextEncoding(activity, this)
-                            textEncoding.execute(imageSteganography)
-                        }
-                        else{
-                            Toast.makeText(activity,"Masukan Message", Toast.LENGTH_SHORT).show()
-                        }
+    override fun onCreateView(  inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        _binding = FragmentEncodeBinding.inflate(inflater, container, false)
+        binding.buttonOpenimage.setOnClickListener {
+            imagechooser()
+        }
+        binding.buttonEncode.setOnClickListener {
+            val secret_key =binding.edittextKey
+            val message= binding.edittextMessage
+            if(filepath!=null){
+                if (secret_key.text != null){
+                    if(message.text != null){
+                        val imageSteganography = ImageSteganography(
+                            message.text.toString(),
+                            secret_key.text.toString(),
+                            original_image
+                        )
+                        val textEncoding = TextEncoding(activity, this)
+                        textEncoding.execute(imageSteganography)
                     }
                     else{
-                        Toast.makeText(activity,"Masukan Key", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(activity,"Masukan Message", Toast.LENGTH_SHORT).show()
                     }
                 }
                 else{
-                    Toast.makeText(activity,"Masukan Gambar", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(activity,"Masukan Key", Toast.LENGTH_SHORT).show()
                 }
             }
-            R.id.button_save->{
-                button_save.setOnClickListener{
-                    if(encoded_image!=null && original_image!=null){
-                        if (edittext_key.text!=null && edittext_message!=null ){
-                            val imgtosave= encoded_image
-                            val PerformEncoding = Thread(Runnable {
-                                kotlin.run { saveToInternalStorage(imgtosave) }
-                            })
-                            save = ProgressDialog(activity)
-                            save!!.setMessage("Saving, Please Wait...")
-                            save!!.setTitle("Saving Image")
-                            save!!.setIndeterminate(false)
-                            save!!.setCancelable(false)
-                            save!!.show()
-                            PerformEncoding.start()
-                            Toast.makeText(activity,"Selesai di save", Toast.LENGTH_SHORT).show()
-                            edittext_message.text=null
-                            edittext_key.text=null
-                        }
-                        else{
-                            Toast.makeText(activity,"Isi key dan message", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                    else{
-                        Toast.makeText(activity,"Pilih dan Encode gambar", Toast.LENGTH_SHORT).show()
-                    }
-                }
+            else{
+                Toast.makeText(activity,"Masukan Gambar", Toast.LENGTH_SHORT).show()
             }
         }
+        binding.buttonSave.setOnClickListener {
+            if(encoded_image!=null && original_image!=null){
+                if (binding.edittextKey.text!=null && binding.edittextMessage.text!=null ){
+                    val imgtosave= encoded_image
+                    val PerformEncoding = Thread(Runnable {
+                        kotlin.run { saveToInternalStorage(imgtosave) }
+                    })
+                    save = ProgressDialog(activity)
+                    save!!.setMessage("Saving, Please Wait...")
+                    save!!.setTitle("Saving Image")
+                    save!!.setIndeterminate(false)
+                    save!!.setCancelable(false)
+                    save!!.show()
+                    PerformEncoding.start()
+                    Toast.makeText(activity,"Selesai di save", Toast.LENGTH_SHORT).show()
+                    binding.edittextMessage.text=null
+                    binding.edittextKey.text=null
+                }
+                else{
+                    Toast.makeText(activity,"Isi key dan message", Toast.LENGTH_SHORT).show()
+                }
+            }
+            else{
+                Toast.makeText(activity,"Pilih dan Encode gambar", Toast.LENGTH_SHORT).show()
+            }
+        }
+        return binding.root
     }
 
     private fun saveToInternalStorage(bitmapImage: Bitmap?) {
@@ -145,18 +130,7 @@ class EncodeFragment : Fragment(), TextEncodingCallback, View.OnClickListener {
         }
         save!!.dismiss()
     }
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode === SELECT_PICTURE && resultCode === Activity.RESULT_OK && android.R.attr.data != null) {
-            filepath = data?.data
-            try {
-                original_image = MediaStore.Images.Media.getBitmap(activity?.contentResolver,filepath!!)
-                image_encript.setImageBitmap(original_image)
-            } catch (e: IOException) {
-                Log.d("MainActivity", "Error : $e")
-            }
-        }
-    }
+
     private fun imagechooser() {
         val intent = Intent(Intent.ACTION_PICK)
         intent.type = "image/*"
@@ -170,7 +144,7 @@ class EncodeFragment : Fragment(), TextEncodingCallback, View.OnClickListener {
     override fun onCompleteTextEncoding(p0: ImageSteganography?) {
         if (p0 != null && p0.isEncoded()) {
             encoded_image = p0.getEncoded_image()
-            image_encript.setImageBitmap(encoded_image)
+            binding.imageEncript.setImageBitmap(encoded_image)
             Toast.makeText(activity,"Encoded", Toast.LENGTH_SHORT).show()
         }
         else{
@@ -200,6 +174,19 @@ class EncodeFragment : Fragment(), TextEncodingCallback, View.OnClickListener {
                     listPermissionsNeeded.toTypedArray(),
                     1
                 )
+            }
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode === SELECT_PICTURE && resultCode === Activity.RESULT_OK && android.R.attr.data != null) {
+            filepath = data?.data
+            try {
+                original_image = MediaStore.Images.Media.getBitmap(activity?.contentResolver,filepath!!)
+                binding.imageEncript.setImageBitmap(original_image)
+            } catch (e: IOException) {
+                Log.d("MainActivity", "Error : $e")
             }
         }
     }
